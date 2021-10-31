@@ -215,10 +215,14 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	port, errEnv := os.LookupEnv("PORT")
+	if errEnv {
+		port = "8080"
+	}
 	fmt.Print("Server is started")
 	http.HandleFunc("/echo", echoHandler)
 	http.Handle("/", http.FileServer(http.Dir(".")))
-	err := http.ListenAndServe("0.0.0.0:8080", nil)
+	err := http.ListenAndServe("0.0.0.0:"+port, nil)
 	if err != nil {
 		panic("Error: " + err.Error())
 	}
