@@ -219,7 +219,7 @@ func main() {
 	if errEnv {
 		port = "8080"
 	}
-	fmt.Print("Server is started")
+	fmt.Print(port)
 	http.HandleFunc("/echo", echoHandler)
 	http.Handle("/", http.FileServer(http.Dir(".")))
 	err := http.ListenAndServe("0.0.0.0:"+port, nil)
