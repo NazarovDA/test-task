@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -63,7 +64,7 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 		case "open":
 			{
 				filenameRoot := request.Arg
-				data, err := os.ReadFile(filenameRoot)
+				data, err := ioutil.ReadFile(filenameRoot)
 
 				if err != nil {
 					conn.WriteMessage(messageType, createErrorMessage("file doesn't exists", request.Arg))
@@ -96,7 +97,7 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 			{
 				folderRoot := request.Arg
 
-				files, err := os.ReadDir(folderRoot)
+				files, err := ioutil.ReadDir(folderRoot)
 
 				if err != nil {
 					conn.WriteMessage(messageType, createErrorMessage("folder doesn't exists", request.Arg))

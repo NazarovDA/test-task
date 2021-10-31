@@ -40,7 +40,7 @@
     var app = new Vue({
         el: "#data",
         data: { 
-            ws: "ws://localhost:8080/echo",
+            ws: `ws://${location.host}/echo`,
             file: "",
             filemanagerData: [],
             filemanagerCurrentFile: "",
