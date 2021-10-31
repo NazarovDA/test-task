@@ -1,0 +1,202 @@
+<html>
+    <head>
+        <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+        <script src="https://unpkg.com/vue-chartjs/dist/vue-chartjs.min.js"></script>
+    </head>
+    <body>
+        <h1>
+            Test task for biocad
+        </h1>
+        <div id="data">
+            <h2 v-if="error">
+                Internal error is occured
+            </h2>
+            <div>
+                <input type="file" id="file" ref="file" v-on:change="handleFileUpload()"/>
+            </div>
+            <div class="get directory">
+                <input v-model="explorerCurrentDir" type="getDirectory" placeholder="input directory name here" autocomplete="false" v-on:keypress.enter="getDir">
+            </div>
+            <div v-if="explorerCurrentDir != ''">
+                <ul>
+                    <li v-for="item in explorerData" :key="item" style="display: flex;">
+                        <button v-on:click="getFile(item)" style="display: flex; flex:1" >{{ item }}</button>
+                        <button v-on:click="deleteFile(item)" style="display: flex; flex:1"> delete {{ item }}</button>
+                    </li>
+                </ul>
+            </div>
+            <div v-if="filemanagerCurrentFile">
+                <div> {{ filemanagerCurrentFile }} </div>
+                <line-graph :chartData="filemanagerData" :chartName="filemanagerCurrentFile">
+
+                </line-graph>
+            </div>
+        </div>
+    </body>
+</html>
+
+<script>
+    var app = new Vue({
+        el: "#data",
+        data: { 
+            ws: "ws://localhost:8080/echo",
+            file: "",
+            filemanagerData: [],
+            filemanagerCurrentFile: "",
+            explorerData: [],
+            explorerCurrentDir: "files/",
+            error: false
+        },
+        methods: {
+            getDir: function(directoryName) {
+                this.connection.send(
+                    JSON.stringify(
+                        {
+                            Command: "check",
+                            Arg: this.explorerCurrentDir
+                        }
+                    )
+                )
+                this.startDir = directoryName
+            },
+            getFile: function(message) {
+                this.connection.send(
+                    JSON.stringify(
+                        {
+                            Command: "open",
+                            Arg: this.explorerCurrentDir + message
+                        }
+                    )
+                )
+            },
+            handleFileUpload(){
+                let file = this.$refs.file.files[0];
+                let reader = new FileReader()
+                reader.readAsText(file, 'utf-8')
+                reader.onload = () => {
+                    this.connection.send(
+                        JSON.stringify(
+                            {
+                                Command: "upload",
+                                Arg: file.name+"\n\n\n"+reader.result
+                            }
+                        )
+                    )
+                }
+                reader.onerror = ()=>{
+                    console.log("error")
+                }
+            },
+            deleteFile: function(message){
+                this.connection.send(
+                    JSON.stringify(
+                        {
+                            Command: "delete",
+                            Arg: this.explorerCurrentDir + message
+                        }
+                    )
+                )
+            },
+            connect: function() {
+                this.connection = new WebSocket(this.ws)
+                window.connection = this.connection
+                this.connection.addEventListener("message", (wsMessage) => {
+                    const message = JSON.parse(wsMessage.data)
+                    switch (message.status) {
+                        case "ok": {
+                            if (this.error == true) {
+                                this.error == false
+                            } 
+                            switch (message.request) {
+                                case "open": {
+                                    //this.filemanager.data = message.data
+                                    let d = message.data.split("\r\n")
+                                    this.filemanagerCurrentFile = d[0]
+                                    d = d.slice(2)
+                                    data = []
+                                    for (point of d) {
+                                        point = point.split(" ")
+                                        data.push({x: Number(point[0]), y: Number(point[1])})
+                                    }
+                                    this.filemanagerData = data
+                                    break
+                                }
+                                case "check": {
+                                    this.explorerCurrentDir = message.arg
+                                    this.explorerData = message.data.split("\n")
+                                    this.explorerData.pop()
+                                    
+                                    break
+                                }
+                                case "delete":{
+                                    this.getDir(this.currentDir)
+                                }
+                                case "upload": {
+                                    this.getDir(this.currentDir)
+                                }
+                            }
+                            break
+                            }
+                        case "file doesn't exists":{
+                            this.filemanager.data = []
+                            this.filemanager.currentFile = "File doesn't exists"
+                            break
+                        }
+                        case "folder doesn't exists": {
+                            this.explorer.data = []
+                            this.explorer.currentDir = "Folder doesn't exists"
+                            break
+                        }
+                        case "can't read json": {
+                            break
+                        }
+                        default: {
+                            this.error = true
+                            this.filemanager.data = []
+                            this.explorer.data = ""
+                            this.filemanager.currentFile = []
+                            this.explorer.currentDir = ""
+                            this.startDir = "."
+                            break
+                        }
+                    }
+                })
+            }
+        },
+        mounted() {
+            this.connect()
+        }
+    })
+    Vue.component("line-graph", {
+        mixins: [VueChartJs.Scatter],
+        props: {
+            chartdata: {
+                type: Object,
+                default: []
+            },
+            chartname: {
+                type: String,
+                default: ""
+            }
+        },
+        watch: {
+            chartdata(){
+                this.upgrageChart()
+            }
+        },
+        methods: {
+            upgrageChart: function() {
+                this.renderChart({
+                datasets: [{label: this.chartname, data: this.chartdata}]
+                })
+            }
+        },
+        beforeUpdate(){
+            this.upgrageChart()
+        },
+        mounted() {
+            this.upgrageChart()
+        }
+    })
+</script>
