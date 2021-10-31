@@ -111,7 +111,7 @@
                             switch (message.request) {
                                 case "open": {
                                     //this.filemanager.data = message.data
-                                    let d = message.data.split("\r\n")
+                                    let d = message.data.split("\n")
                                     this.filemanagerCurrentFile = d[0]
                                     d = d.slice(2)
                                     data = []
