@@ -215,7 +215,7 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	port, errEnv := os.LookupEnv("PORT")
+	port, errEnv := os.LookupEnv("$PORT")
 	if errEnv {
 		port = "8080"
 	}
