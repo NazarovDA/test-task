@@ -215,7 +215,7 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	port := "8080"
+	port := os.Getenv("PORT")
 	fmt.Print(port)
 	http.HandleFunc("/echo", echoHandler)
 	http.Handle("/", http.FileServer(http.Dir(".")))
